@@ -4,7 +4,7 @@ version = "0.1.0"
 edition = "2024"
 rust-version = "1.91"
 license = "MIT"
-description = "study plugin for the gray agent harness"
+description = "gray tutors YOU: /study starts a Socratic-tutor session, study_quiz asks via host/ask, study_deck keeps SM-2-lite flashcards."
 
 [[bin]]
 name = "gray-study"
