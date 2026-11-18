@@ -84,6 +84,7 @@ fn manifest() -> Value {
             }
         ],
         "commands": ["/study"],
+        "command_descriptions": {"/study": "start a tutoring session on a topic"},
         "hooks": ["prompt/context"],
         "capabilities": ["host.ask"]
     })
