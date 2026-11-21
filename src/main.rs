@@ -416,7 +416,7 @@ fn tool_deck(root: &Path, args: &Value) -> Result<String, String> {
 fn extract_answer(result: &Value) -> Option<String> {
     let a = result.get("answers")?;
     let mut out = Vec::new();
-    let mut collect = |v: &Value, out: &mut Vec<String>| {
+    let collect = |v: &Value, out: &mut Vec<String>| {
         if let Some(s) = v.as_str() {
             out.push(s.to_string());
         } else if let Some(arr) = v.as_array() {
