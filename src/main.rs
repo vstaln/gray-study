@@ -275,7 +275,7 @@ fn tool_deck(root: &Path, args: &Value) -> Result<String, String> {
                 .map(|c| c.iter().filter_map(|x| x["id"].as_u64()).max().unwrap_or(0))
                 .unwrap_or(0)
                 + 1;
-            deck["cards"].as_array_mut().map(|cards| {
+            if let Some(cards) = deck["cards"].as_array_mut() {
                 cards.push(json!({
                     "id": next_id,
                     "front": front,
@@ -286,7 +286,7 @@ fn tool_deck(root: &Path, args: &Value) -> Result<String, String> {
                     "reviews": 0,
                     "correct": 0
                 }));
-            });
+            }
             write_deck(&path, &deck)?;
             Ok(format!("added card #{next_id} to '{name}' (due now)"))
         }
@@ -795,10 +795,7 @@ mod tests {
         );
         assert!(r["content"].as_str().unwrap().contains("card #1"));
         let due = tool(&root, "study_deck", json!({"action": "due"}));
-        assert_eq!(
-            due["content"].as_str().unwrap().contains("\"due_count\":1"),
-            true
-        );
+        assert!(due["content"].as_str().unwrap().contains("\"due_count\":1"));
         let deck: Value = serde_json::from_str(
             &std::fs::read_to_string(root.join("study/decks/rust.json")).unwrap(),
         )
