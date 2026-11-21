@@ -237,15 +237,26 @@ fn tool_deck(root: &Path, args: &Value) -> Result<String, String> {
             if path.exists() {
                 let d = read_deck(&path)?;
                 let n = d["cards"].as_array().map(Vec::len).unwrap_or(0);
-                return Ok(format!("deck '{}' already exists ({n} cards)", deck_name(&path)));
+                return Ok(format!(
+                    "deck '{}' already exists ({n} cards)",
+                    deck_name(&path)
+                ));
             }
             let name = deck_name(&path);
             write_deck(&path, &empty_deck(&name))?;
             Ok(format!("created deck '{name}'"))
         }
         "add" => {
-            let front = args.get("front").and_then(Value::as_str).unwrap_or("").trim();
-            let back = args.get("back").and_then(Value::as_str).unwrap_or("").trim();
+            let front = args
+                .get("front")
+                .and_then(Value::as_str)
+                .unwrap_or("")
+                .trim();
+            let back = args
+                .get("back")
+                .and_then(Value::as_str)
+                .unwrap_or("")
+                .trim();
             if front.is_empty() || back.is_empty() {
                 return Err("add needs both `front` and `back`".into());
             }
@@ -261,12 +272,7 @@ fn tool_deck(root: &Path, args: &Value) -> Result<String, String> {
             }
             let next_id = deck["cards"]
                 .as_array()
-                .map(|c| {
-                    c.iter()
-                        .filter_map(|x| x["id"].as_u64())
-                        .max()
-                        .unwrap_or(0)
-                })
+                .map(|c| c.iter().filter_map(|x| x["id"].as_u64()).max().unwrap_or(0))
                 .unwrap_or(0)
                 + 1;
             deck["cards"].as_array_mut().map(|cards| {
@@ -297,7 +303,11 @@ fn tool_deck(root: &Path, args: &Value) -> Result<String, String> {
                     return Err(format!("no such deck: '{deck_arg}'"));
                 }
                 let name = deck_name(&path);
-                for c in read_deck(&path)?["cards"].as_array().cloned().unwrap_or_default() {
+                for c in read_deck(&path)?["cards"]
+                    .as_array()
+                    .cloned()
+                    .unwrap_or_default()
+                {
                     if card_is_due(&c, at) {
                         rows.push(due_row(&name, &c));
                     }
@@ -389,10 +399,15 @@ fn tool_deck(root: &Path, args: &Value) -> Result<String, String> {
                     .collect();
                 let total = cards.len();
                 cards.truncate(MAX_LIST_CARDS);
-                Ok(json!({"deck": deck_name(&path), "cards": cards, "card_count": total}).to_string())
+                Ok(
+                    json!({"deck": deck_name(&path), "cards": cards, "card_count": total})
+                        .to_string(),
+                )
             }
         }
-        other => Err(format!("unknown action '{other}' — use create|add|due|answer|list")),
+        other => Err(format!(
+            "unknown action '{other}' — use create|add|due|answer|list"
+        )),
     }
 }
 
@@ -458,7 +473,11 @@ impl Host {
 }
 
 fn tool_quiz(args: &Value, host: Option<&Host>) -> Result<String, String> {
-    let q = args.get("question").and_then(Value::as_str).unwrap_or("").trim();
+    let q = args
+        .get("question")
+        .and_then(Value::as_str)
+        .unwrap_or("")
+        .trim();
     if q.is_empty() {
         return Err("study_quiz needs `question`".into());
     }
@@ -498,9 +517,7 @@ fn tool_quiz(args: &Value, host: Option<&Host>) -> Result<String, String> {
     match host.ask(json!({"questions": [question], "blocking": true})) {
         Some(reply) => {
             // Capability denied / ask rejected → degrade, not error.
-            if reply.get("error").is_some()
-                || reply.pointer("/result/error").is_some()
-            {
+            if reply.get("error").is_some() || reply.pointer("/result/error").is_some() {
                 return Ok(degrade("the host declined the ask"));
             }
             let result = reply.get("result").cloned().unwrap_or(Value::Null);
@@ -693,10 +710,7 @@ fn main() {
             }
             if v.get("method").is_none() {
                 if let Some(id) = v.get("id").and_then(Value::as_str) {
-                    let tx = reader_pending
-                        .lock()
-                        .ok()
-                        .and_then(|mut p| p.remove(id));
+                    let tx = reader_pending.lock().ok().and_then(|mut p| p.remove(id));
                     if let Some(tx) = tx {
                         let _ = tx.send(v);
                     }
@@ -781,7 +795,10 @@ mod tests {
         );
         assert!(r["content"].as_str().unwrap().contains("card #1"));
         let due = tool(&root, "study_deck", json!({"action": "due"}));
-        assert_eq!(due["content"].as_str().unwrap().contains("\"due_count\":1"), true);
+        assert_eq!(
+            due["content"].as_str().unwrap().contains("\"due_count\":1"),
+            true
+        );
         let deck: Value = serde_json::from_str(
             &std::fs::read_to_string(root.join("study/decks/rust.json")).unwrap(),
         )
@@ -802,13 +819,23 @@ mod tests {
             "study_deck",
             json!({"action": "answer", "deck": "d", "card_id": 1, "correct": true}),
         );
-        assert!(r["content"].as_str().unwrap().contains("\"interval_days\":2"));
+        assert!(
+            r["content"]
+                .as_str()
+                .unwrap()
+                .contains("\"interval_days\":2")
+        );
         let r = tool(
             &root,
             "study_deck",
             json!({"action": "answer", "deck": "d", "card_id": 1, "correct": "wrong"}),
         );
-        assert!(r["content"].as_str().unwrap().contains("\"interval_days\":1"));
+        assert!(
+            r["content"]
+                .as_str()
+                .unwrap()
+                .contains("\"interval_days\":1")
+        );
         // A just-answered card is not due.
         let due = tool(&root, "study_deck", json!({"action": "due", "deck": "d"}));
         assert!(due["content"].as_str().unwrap().contains("\"due_count\":0"));
